@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>工厂模式</title>
+</head>
+<body>
+    <script>
+        // 要点在于集中管理，工厂本质上是执行通用操作的
+        // 一般的使用方式是构造函数的模式，拓展方式可以使用继承
+        // 创建多重钩子，在底层调用时自动执行上层的钩子，但钩子本身可以被底层重写
+
+        // var catFactory = function() {}
+        // creatCat.prototype = {
+        //     constructor: catFactory,
+        //     roal: function() {
+        //         var cat = this.createCat();
+        //         cat.vocal();
+        //     },
+        //     createCat() {
+        //         throw new Error('这是父类，需要在子类中重写');
+        //     }
+        // }
+
+        class catFactory {
+            constructor() {
+
+            };
+            roal() {
+                var cat = this.createCat();
+                cat.vocal();
+            };
+            createCat() {
+                throw new Error('这是父类，需要在子类中重写');
+            };
+        }
+
+        class tigerFactory extends catFactory {
+            constructor(name) {
+                super();
+                this.name = name;
+            }
+            createCat() {
+                var roal = function() {
+                    console.log('I am a tiger');
+                }
+                return {
+                    roal
+                }
+            }
+        }
+
+        tiger1 = new tigerFactory('tiger1');
+
+        tiger1.roal();
+
+
+    </script>
+</body>
+</html>

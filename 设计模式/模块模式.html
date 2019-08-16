@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>模块模式</title>
+</head>
+<body>
+    <script>
+        // 其实就是单例模式增强版，将单例包装，只返回我们想向外暴露的部分
+        var singleMoudle = (function() {
+            var a = 1;
+            var getA = function() {
+                return a
+            };
+            return {
+                getA
+            }
+        })()
+
+        console.log(singleMoudle.getA());
+    </script>
+</body>
+</html>
