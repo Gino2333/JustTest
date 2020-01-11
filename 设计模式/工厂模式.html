@@ -1,62 +1,204 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>工厂模式</title>
-</head>
-<body>
+  </head>
+  <body>
     <script>
-        // 要点在于集中管理，工厂本质上是执行通用操作的
-        // 一般的使用方式是构造函数的模式，拓展方式可以使用继承
-        // 创建多重钩子，在底层调用时自动执行上层的钩子，但钩子本身可以被底层重写
+      // 要点在于集中管理，工厂本质上是执行通用操作的
+      // 在父类中制定执行路线，在子类中指定具体指令
+      // 调用时外部直接调用父类方法，由由父类按照既定路线，调用子类方法
 
-        // var catFactory = function() {}
-        // creatCat.prototype = {
-        //     constructor: catFactory,
-        //     roal: function() {
-        //         var cat = this.createCat();
-        //         cat.vocal();
-        //     },
-        //     createCat() {
-        //         throw new Error('这是父类，需要在子类中重写');
-        //     }
-        // }
-
-        class catFactory {
-            constructor() {
-
-            };
-            roal() {
-                var cat = this.createCat();
-                cat.vocal();
-            };
-            createCat() {
-                throw new Error('这是父类，需要在子类中重写');
-            };
+      class catFactory {
+        constructor() {}
+        // 父类中的通用方法
+        // 先创建子类
+        // 然后依次调用子类中的业务逻辑
+        // 我理解这里只是定了业务的执行路线
+        roar() {
+          var cat = this.createRoar();
+          cat.roarStep1();
+          cat.roarStep2();
         }
-
-        class tigerFactory extends catFactory {
-            constructor(name) {
-                super();
-                this.name = name;
-            }
-            createCat() {
-                var roal = function() {
-                    console.log('I am a tiger');
-                }
-                return {
-                    roal
-                }
-            }
+        createRoar() {
+          throw new Error("这是父类，需要在子类中重写");
         }
+      }
 
-        tiger1 = new tigerFactory('tiger1');
+      class tigerFactory extends catFactory {
+        constructor(name) {
+          super();
+          this.name = name;
+        }
+        // 子类的创建函数
+        // 只需要返回父类路线中需要的定制点，有点类似于参数的意味
+        createRoar() {
+          var roarStep1 = function() {
+            console.log("I am a tiger");
+          };
+          var roarStep2 = function() {
+            console.log("I am a roaring");
+          };
+          return {
+            roarStep1,
+            roarStep2
+          };
+        }
+      }
 
-        tiger1.roal();
+      const tiger = new tigerFactory("tiger1");
 
-
+      tiger.roar();
     </script>
-</body>
+    <script>
+      // 一个简单的小程序登录实战构思
+      class loginFactory {
+        constructor(page, app, config = {}) {
+          this.page = page;
+          const { silence = false, autoNavigateTo = false } = config;
+          this.silence = silence;
+          this.autoNavigateTo = autoNavigateTo;
+          this.loginInfo = null;
+        }
+        _checkLoginABTestStatus() {}
+        _checkLoginStatus() {}
+        _checkNeedBringUpLogin() {
+          return Promise((resolve, reject) => {
+            // 判断是否命中强制登录实验
+            this._checkLoginABTestStatus()
+              .then(() => {
+                // 检查参数
+                // 命中后检查登录状态
+                if (!this.loginInfo) {
+                }
+              })
+              .catch(e => {
+                // 判断是否命中强制登录实验失败，则认为不需要强制登录
+                reject();
+              });
+          });
+        }
+        _login() {
+          const login = this.createLogin();
+          return login
+            .login()
+            .then(res => {
+              // 重置登录状态
+              this.loginInfo = {};
+            })
+            .catch(e => {
+              if (!needBack) {
+                return;
+              }
+              navigatorTo();
+              throw e;
+            });
+        }
+        login() {
+          return new Promise((resolve, reject) => {
+            // 登录状态检查
+            return this._checkNeedBringUpLogin()
+              .then(res => {
+                // 通过后返回
+                resolve();
+              })
+              .catch(e => {
+                // 不通过接入现有登录
+                if (silence) {
+                  return reject(e);
+                }
+                return this._login();
+              });
+          });
+        }
+        createLogin() {
+          throw new Error("这是 Login 父类，需要在子类中重写");
+        }
+      }
+      // 内部宿主登录
+      class nativeLogin extends loginFactory {
+        constructor(page, app, config) {
+          super(page, app, config);
+        }
+        createLogin() {
+          const login = function() {
+            return new Promise((resolve, reject) => {
+              nativeFunc()
+                .then(res => {
+                  resolve();
+                })
+                .catch(e => {
+                  reject();
+                });
+            });
+          };
+          return {
+            login
+          };
+        }
+      }
+
+      // 外部宿主组件登录
+      class phoneCodeLogin extends loginFactory {
+        constructor(page, app, config = {}) {
+          super(page);
+          const {
+            phoneCodeLoginFormStatusName = "phoneCodeLoginFormShown",
+            onPhoneCodeLoginSuccess = "onPhoneCodeLoginSuccess",
+            onPhoneCodeLoginCancel = "onPhoneCodeLoginCancel"
+          } = config;
+          this.page = page;
+          this.onPhoneCodeLoginSuccess = onPhoneCodeLoginSuccess;
+          this.onPhoneCodeLoginCancel = onPhoneCodeLoginCancel;
+          //登录前准备
+          this.preLogin(this.hostType);
+        }
+        preLogin(hostType) {}
+        createLogin() {
+          const login = function() {
+            return new Promise((resolve, reject) => {
+              page.setData({
+                [this.phoneCodeLoginFormStatusName]: true
+              });
+              page[onPhoneCodeLoginSuccess] = resolve;
+              page[onPhoneCodeLoginCancel] = reject;
+            });
+          };
+          return {
+            login
+          };
+        }
+      }
+      function getLoginWithHostType(hostType, page, app, config = {}) {
+        let login = null;
+        return function() {
+          if (login) {
+            return login;
+          }
+          switch (hostType) {
+            case 1:
+              login = new nativeLogin();
+            default:
+              login = new phoneCodeLogin();
+          }
+          return login;
+        };
+      }
+
+      function getLoginObj(hostType, page, app, config = {}) {
+        return getHostType().then(hostType => {
+          return getLoginWithHostType(hostType, page, app, config);
+        });
+      }
+
+      function getLoginFunc(hostType, page, app, config = {}) {
+        return getHostType().then(hostType => {
+          return getLoginWithHostType(hostType, page, app, config).login();
+        });
+      }
+    </script>
+  </body>
 </html>
